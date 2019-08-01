@@ -84,9 +84,10 @@ namespace argos {
 
    void CSpace::Destroy() {
       /* Remove all entities */
-      while(!m_vecRootEntities.empty()) {
-         CallEntityOperation<CSpaceOperationRemoveEntity, CSpace, void>(*this, *m_vecRootEntities.back());
-      }
+     for (auto* c_entity : m_vecRootEntities) {
+       c_entity->Destroy();
+       delete c_entity;
+     } /* for(c_entity...) */
    }
 
    /****************************************/
