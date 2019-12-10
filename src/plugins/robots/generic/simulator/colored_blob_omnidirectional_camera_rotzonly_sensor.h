@@ -13,6 +13,7 @@ namespace argos {
 #include <argos3/core/simulator/space/space.h>
 #include <argos3/core/simulator/sensor.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_colored_blob_omnidirectional_camera_sensor.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector.h>
 
 namespace argos {
 
@@ -36,9 +37,9 @@ namespace argos {
       virtual void Destroy();
 
       virtual void Enable();
-      
+
       virtual void Disable();
-			
+
    protected:
 
       bool                                     m_bEnabled;
@@ -50,6 +51,8 @@ namespace argos {
       COmnidirectionalCameraLEDCheckOperation* m_pcOperation;
       bool                                     m_bShowRays;
 
+      /** Noise injector */
+      CNoiseInjector m_cNoiseInjector;
    };
 }
 

@@ -25,10 +25,10 @@ namespace argos {
       m_fNoiseFactorStdDev[LEFT_WHEEL] = 0.0;
       m_fNoiseFactorStdDev[RIGHT_WHEEL] = 0.0;
    }
-   
+
    /****************************************/
    /****************************************/
-   
+
    void CDifferentialSteeringDefaultActuator::SetRobot(CComposableEntity& c_entity) {
       try {
          m_pcWheeledEntity = &(c_entity.GetComponent<CWheeledEntity>("wheels"));
@@ -57,7 +57,7 @@ namespace argos {
    GetNodeAttributeOrDefault<Real>(t_tree, ATTR "_right", VAR[RIGHT_WHEEL], VAR[RIGHT_WHEEL]);
 
 #define PICK_BIAS(LRW) m_fNoiseBias[LRW ## _WHEEL] = m_pcRNG->Gaussian(fNoiseBiasStdDev[LRW ## _WHEEL], fNoiseBiasAvg[LRW ## _WHEEL])
-   
+
    void CDifferentialSteeringDefaultActuator::Init(TConfigurationNode& t_tree) {
       try {
          CCI_DifferentialSteeringActuator::Init(t_tree);
@@ -103,7 +103,7 @@ namespace argos {
       *                                                    \
       (m_fCurrentVelocity[LRW ## _WHEEL] +                 \
        m_fNoiseBias[LRW ## _WHEEL]);
-   
+
    void CDifferentialSteeringDefaultActuator::SetLinearVelocity(Real f_left_velocity,
                                                                 Real f_right_velocity) {
       /* Convert speeds in m/s */
@@ -117,17 +117,17 @@ namespace argos {
          ADD_NOISE(RIGHT);
       }
    }
-   
+
    /****************************************/
    /****************************************/
-   
+
    void CDifferentialSteeringDefaultActuator::Update() {
       m_pcWheeledEntity->SetVelocities(m_fCurrentVelocity);
    }
 
    /****************************************/
    /****************************************/
-   
+
    void CDifferentialSteeringDefaultActuator::Reset() {
       /* Zero the speeds */
       m_fCurrentVelocity[LEFT_WHEEL]  = 0.0;
@@ -141,10 +141,10 @@ namespace argos {
          m_pcRNG->Gaussian(1.0, 0.0);
       }
    }
-   
+
    /****************************************/
    /****************************************/
-   
+
 }
 
 REGISTER_ACTUATOR(CDifferentialSteeringDefaultActuator,
@@ -180,7 +180,9 @@ REGISTER_ACTUATOR(CDifferentialSteeringDefaultActuator,
                   "b = random bias from a Gaussian distribution\n"
                   "f = random factor from a Gaussian distribution\n"
                   "a = actual actuated value\n\n"
+
                   "a = f * (w + b)\n\n"
+
                   "You can configure the average and stddev of both the bias and the factor. This\n"
                   "can be done with the optional attributes: 'bias_avg', 'bias_stddev',\n"
                   "'factor_avg', and 'factor_stddev'. Bias attributes are expressed in m/s, while\n"

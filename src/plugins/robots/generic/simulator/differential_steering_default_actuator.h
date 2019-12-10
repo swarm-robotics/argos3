@@ -65,13 +65,13 @@ namespace argos {
    protected:
 
       CWheeledEntity* m_pcWheeledEntity;
-      
+
       /** Random number generator */
       CRandom::CRNG* m_pcRNG;
 
       /** Noise bias for each wheel */
       Real m_fNoiseBias[2];
-      
+
       /** Noise factor average (Gaussian model) for each wheel  */
       Real m_fNoiseFactorAvg[2];
 
