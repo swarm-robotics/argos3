@@ -256,6 +256,7 @@ namespace argos {
                    "of algorithms that behave differently, however, is also possible.\n\n"
 
                    "REQUIRED XML CONFIGURATION\n\n"
+
                    "  <controllers>\n"
                    "    ...\n"
                    "    <my_controller ...>\n"

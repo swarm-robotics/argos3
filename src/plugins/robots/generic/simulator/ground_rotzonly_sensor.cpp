@@ -26,8 +26,6 @@ namespace argos {
       m_pcEmbodiedEntity(NULL),
       m_pcFloorEntity(NULL),
       m_pcGroundSensorEntity(NULL),
-      m_pcRNG(NULL),
-      m_bAddNoise(false),
       m_cSpace(CSimulator::GetInstance().GetSpace()) {}
 
    /****************************************/
@@ -46,16 +44,10 @@ namespace argos {
    void CGroundRotZOnlySensor::Init(TConfigurationNode& t_tree) {
       try {
          CCI_GroundSensor::Init(t_tree);
-         /* Parse noise level */
-         Real fNoiseLevel = 0.0f;
-         GetNodeAttributeOrDefault(t_tree, "noise_level", fNoiseLevel, fNoiseLevel);
-         if(fNoiseLevel < 0.0f) {
-            THROW_ARGOSEXCEPTION("Can't specify a negative value for the noise level of the ground sensor");
-         }
-         else if(fNoiseLevel > 0.0f) {
-            m_bAddNoise = true;
-            m_cNoiseRange.Set(-fNoiseLevel, fNoiseLevel);
-            m_pcRNG = CRandom::CreateRNG("argos");
+         /* Parse noise injection */
+         if(NodeExists(t_tree, "noise")) {
+           TConfigurationNode& tNode = GetNode(t_tree, "noise");
+           m_cNoiseInjector.Init(tNode);
          }
          m_tReadings.resize(m_pcGroundSensorEntity->GetNumSensors());
       }
@@ -93,8 +85,8 @@ namespace argos {
          /* Set the reading */
          m_tReadings[i] = cColor.ToGrayScale() / 255.0f;
          /* Apply noise to the sensor */
-         if(m_bAddNoise) {
-            m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange);
+         if(m_cNoiseInjector.Enabled()) {
+           m_tReadings[i] += m_cNoiseInjector.InjectNoise();
          }
          /* Is it a BW sensor? */
          if(sSens.Type == CGroundSensorEquippedEntity::TYPE_BLACK_WHITE) {
@@ -149,18 +141,44 @@ namespace argos {
 
                    "OPTIONAL XML CONFIGURATION\n\n"
 
-                   "It is possible to add uniform noise to the sensors, thus matching the\n"
-                   "characteristics of a real robot better. This can be done with the attribute\n"
-                   "\"noise_level\", whose allowed range is in [-1,1] and is added to the calculated\n"
-                   "reading. The final sensor reading is always normalized in the [0-1] range.\n\n"
+                   "It is possible to add different types of noise to the sensor, thus matching\n"
+                   "the characteristics of a real robot better. This can be done by adding 'noise'\n"
+                   "child tag to the sensor configuration; if the 'noise' tag does not exist, then\n"
+                   "no noise is injected. If the tag exists, then the 'model' attribute is required\n"
+                   "and is used to specify noise model to be applied into the sensor each timestep it\n"
+                   "is enabled/active:\n\n"
+
+                   "- 'none' - Does not inject any noise; this model exists to allow for the\n"
+                   "           inclusion of the 'noise' tag without necessarily enabling noise\n"
+                   "           injection.\n\n"
+
+                   "- 'uniform' - Injects uniformly distributed noise Uniform(-'level', 'level')\n"
+                   "              into the sensor. The 'level' attribute is required for this noise\n"
+                   "              model.\n\n"
+
+                   "- 'gaussian' - Injects Gaussian('mean','stddev') noise into the sensor\n"
+                   "               Both the 'mean' and 'stddev' attributes are optional, and\n"
+                   "               default to 0.0 and 1.0, respectively, if omitted.\n\n"
+
+                   "The final sensor reading after noise has been added is clamped to the [0-1] range.\n\n"
+
                    "  <controllers>\n"
                    "    ...\n"
                    "    <my_controller ...>\n"
                    "      ...\n"
                    "      <sensors>\n"
                    "        ...\n"
-                   "        <ground implementation=\"rot_z_only\"\n"
-                   "                noise_level=\"0.1\" />\n"
+                   "        <!-- Uniformly distributed noise -->\n"
+                   "        <ground implementation=\"rot_z_only\">\n"
+                   "          <noise model=\"uniform\"\n"
+                   "                 level=\"0.1\" />\n"
+                   "        </ground>\n"
+                   "        <!-- Gaussian noise -->\n"
+                   "        <ground implementation=\"rot_z_only\">\n"
+                   "          <noise model=\"gaussian\"\n"
+                   "                 stddev=\"0.1\"\n"
+                   "                 mean=\"0.1\" />\n"
+                   "        </ground>\n"
                    "        ...\n"
                    "      </sensors>\n"
                    "      ...\n"
