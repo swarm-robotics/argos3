@@ -15,14 +15,12 @@ namespace argos {
    /****************************************/
 
    CMiniQuadrotorRotorDefaultActuator::CMiniQuadrotorRotorDefaultActuator() :
-      m_pcRotorEquippedEntity(NULL),
-      m_pcRNG(NULL),
-      m_fNoiseStdDeviation(0.0f) {
+      m_pcRotorEquippedEntity(NULL) {
    }
-   
+
    /****************************************/
    /****************************************/
-   
+
    void CMiniQuadrotorRotorDefaultActuator::SetRobot(CComposableEntity& c_entity) {
       try {
          m_pcRotorEquippedEntity = &(c_entity.GetComponent<CRotorEquippedEntity>("rotors"));
@@ -41,10 +39,13 @@ namespace argos {
    void CMiniQuadrotorRotorDefaultActuator::Init(TConfigurationNode& t_tree) {
       try {
          CCI_MiniQuadrotorRotorActuator::Init(t_tree);
-         GetNodeAttributeOrDefault<Real>(t_tree, "noise_std_dev", m_fNoiseStdDeviation, 0.0f);
-         if(m_fNoiseStdDeviation > 0.0f) {
-            m_pcRNG = CRandom::CreateRNG("argos");
+
+         /* Parse noise injection */
+         if(NodeExists(t_tree, "noise")) {
+           TConfigurationNode& tNode = GetNode(t_tree, "noise");
+           m_cNoiseInjector.Init(tNode);
          }
+
       }
       catch(CARGoSException& ex) {
          THROW_ARGOSEXCEPTION_NESTED("Initialization error in mini-quadrotor rotor actuator.", ex);
@@ -53,38 +54,31 @@ namespace argos {
 
    /****************************************/
    /****************************************/
-   
+
    void CMiniQuadrotorRotorDefaultActuator::SetRotorVelocities(const CCI_MiniQuadrotorRotorActuator::SVelocities& s_velocities) {
       /* Set velocities */
       m_sCurrentVelocities = s_velocities;
       /* Apply noise */
-      if(m_fNoiseStdDeviation > 0.0f) {
-         AddGaussianNoise();
+      if(m_cNoiseInjector.Enabled()) {
+        m_sCurrentVelocities.Velocities[0] += m_sCurrentVelocities.Velocities[0] * m_cNoiseInjector.InjectNoise();
+        m_sCurrentVelocities.Velocities[1] += m_sCurrentVelocities.Velocities[1] * m_cNoiseInjector.InjectNoise();
+        m_sCurrentVelocities.Velocities[2] += m_sCurrentVelocities.Velocities[2] * m_cNoiseInjector.InjectNoise();
+        m_sCurrentVelocities.Velocities[3] += m_sCurrentVelocities.Velocities[3] * m_cNoiseInjector.InjectNoise();
       }
    }
-   
+
    /****************************************/
    /****************************************/
-   
+
    void CMiniQuadrotorRotorDefaultActuator::Update() {
       m_pcRotorEquippedEntity->SetVelocities(m_sCurrentVelocities.Velocities);
    }
 
    /****************************************/
    /****************************************/
-   
+
    void CMiniQuadrotorRotorDefaultActuator::Reset() {
       m_sCurrentVelocities = SVelocities();
-   }
-   
-   /****************************************/
-   /****************************************/
-   
-   void CMiniQuadrotorRotorDefaultActuator::AddGaussianNoise() {
-      m_sCurrentVelocities.Velocities[0] += m_sCurrentVelocities.Velocities[0] * m_pcRNG->Gaussian(m_fNoiseStdDeviation);
-      m_sCurrentVelocities.Velocities[1] += m_sCurrentVelocities.Velocities[1] * m_pcRNG->Gaussian(m_fNoiseStdDeviation);
-      m_sCurrentVelocities.Velocities[2] += m_sCurrentVelocities.Velocities[2] * m_pcRNG->Gaussian(m_fNoiseStdDeviation);
-      m_sCurrentVelocities.Velocities[3] += m_sCurrentVelocities.Velocities[3] * m_pcRNG->Gaussian(m_fNoiseStdDeviation);
    }
 
    /****************************************/
@@ -100,7 +94,9 @@ REGISTER_ACTUATOR(CMiniQuadrotorRotorDefaultActuator,
                   "This actuator controls the four rotors of a mini-quadrotor robot. For a\n"
                   "complete description of its usage, refer to the\n"
                   "ci_miniquadrotor_rotor_actuator.h file.\n\n"
+
                   "REQUIRED XML CONFIGURATION\n\n"
+
                   "  <controllers>\n"
                   "    ...\n"
                   "    <my_controller ...>\n"
@@ -114,25 +110,53 @@ REGISTER_ACTUATOR(CMiniQuadrotorRotorDefaultActuator,
                   "    </my_controller>\n"
                   "    ...\n"
                   "  </controllers>\n\n"
+
                   "OPTIONAL XML CONFIGURATION\n\n"
-                  "It is possible to specify noisy speed in order to match the characteristics\n"
-                  "of the real robot. This can be done with the attribute: 'noise_std_dev',\n" 
-                  "which indicates the standard deviation of a gaussian noise applied to the\n"
-                  "desired velocity of the rotor:\n\n"
-                  "  <controllers>\n"
-                  "    ...\n"
-                  "    <my_controller ...>\n"
-                  "      ...\n"
-                  "      <actuators>\n"
-                  "        ...\n"
-                  "        <miniquadrotor_rotor implementation=\"default\"\n"
-                  "                               noise_std_dev=\"1\" />\n"
-                  "        ...\n"
-                  "      </actuators>\n"
-                  "      ...\n"
-                  "    </my_controller>\n"
-                  "    ...\n"
-                  "  </controllers>\n",
+
+                  "It is possible to add different types of noise to the actuator, thus matching\n"
+                   "the characteristics of a real robot better. This can be done by adding 'noise'\n"
+                   "child tag to the actuator configuration; if the 'noise' tag does not exist, then\n"
+                   "no noise is injected. If the tag exists, then the 'model' attribute is required\n"
+                   "and is used to specify noise model to be applied to the actuator each timestep it\n"
+                   "is enabled/active:\n\n"
+
+                   "- 'none' - Does not inject any noise; this model exists to allow for the\n"
+                   "           inclusion of the 'noise' tag without necessarily enabling noise\n"
+                   "           injection.\n\n"
+
+                   "- 'uniform' - Injects uniformly distributed noise Uniform(-'level', 'level')\n"
+                   "              into the actuator. The 'level' attribute is required for this noise\n"
+                   "              model.\n\n"
+
+                   "- 'gaussian' - Injects Gaussian('mean','stddev') noise into the actuator\n"
+                   "               Both the 'mean' and 'stddev' attributes are optional, and\n"
+                   "               default to 0.0 and 1.0, respectively, if omitted.\n\n"
+
+                   "The final actuator reading after noise has been added is clamped to the [0-1] range.\n\n"
+
+                   "  <controllers>\n"
+                   "    ...\n"
+                   "    <my_controller ...>\n"
+                   "      ...\n"
+                   "      <actuators>\n"
+                   "        ...\n"
+                   "        <!-- Uniformly distributed noise -->\n"
+                   "        <miniquadrotor_rotor implementation=\"default\">\n"
+                   "          <noise model=\"uniform\"\n"
+                   "                 level=\"0.1\" />\n"
+                   "        </miniquadrotor_rotor>\n"
+                   "        <!-- Gaussian noise -->\n"
+                   "        <miniquadrotor_rotor implementation=\"default\">\n"
+                   "          <noise model=\"gaussian\"\n"
+                   "                 stddev=\"0.1\"\n"
+                   "                 mean=\"0.1\" />\n"
+                   "        </miniquadrotor_rotor>\n"
+                   "        ...\n"
+                   "      </actuators>\n"
+                   "      ...\n"
+                   "    </my_controller>\n"
+                   "    ...\n"
+                  "  </controllers>\n\n",
+
                   "Usable"
    );
-   

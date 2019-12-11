@@ -31,8 +31,6 @@ namespace argos {
    /****************************************/
 
    CFootBotDistanceScannerRotZOnlySensor::CFootBotDistanceScannerRotZOnlySensor() :
-      m_pcRNG(NULL),
-      m_bAddNoise(false),
       m_cSpace(CSimulator::GetInstance().GetSpace()),
       m_bShowRays(false) {}
 
@@ -44,12 +42,6 @@ namespace argos {
          CCI_FootBotDistanceScannerSensor::Init(t_tree);
          /* Show rays? */
          GetNodeAttributeOrDefault(t_tree, "show_rays", m_bShowRays, m_bShowRays);
-         /* Noise range */
-         GetNodeAttributeOrDefault(t_tree, "noise_range", m_cNoiseRange, m_cNoiseRange);
-         if(m_cNoiseRange.GetSpan() > 0.0f) {
-            m_bAddNoise = true;
-            m_pcRNG = CRandom::CreateRNG("argos");
-         }
       }
       catch(CARGoSException& ex) {
          THROW_ARGOSEXCEPTION_NESTED("Initialization error in foot-bot distance scanner rot_z_only sensor.", ex);
@@ -334,7 +326,9 @@ namespace argos {
                    "the foot-bot is always parallel to the XY plane, i.e., it rotates only around\n"
                    "the Z axis. This implementation is faster than a 3D one and should be used\n"
                    "only when the assumption about the foot-bot rotation holds.\n\n"
+
                    "REQUIRED XML CONFIGURATION\n\n"
+
                    "  <controllers>\n"
                    "    ...\n"
                    "    <my_controller ...>\n"
@@ -348,7 +342,9 @@ namespace argos {
                    "    </my_controller>\n"
                    "    ...\n"
                    "  </controllers>\n\n"
+
                    "OPTIONAL XML CONFIGURATION\n\n"
+
                    "It is possible to draw the rays shot by the distance scanner in the OpenGL\n"
                    "visualization. This can be useful for sensor debugging but also to understand\n"
                    "what's wrong in your controller. In OpenGL, the rays are drawn in cyan when\n"

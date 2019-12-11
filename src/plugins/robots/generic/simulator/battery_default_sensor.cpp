@@ -23,9 +23,7 @@ namespace argos {
 
    CBatteryDefaultSensor::CBatteryDefaultSensor() :
       m_pcEmbodiedEntity(NULL),
-      m_pcBatteryEntity(NULL),
-      m_pcRNG(NULL),
-      m_bAddNoise(false) {}
+      m_pcBatteryEntity(NULL) {}
 
    /****************************************/
    /****************************************/
@@ -48,11 +46,11 @@ namespace argos {
       try {
          /* Execute standard logic */
          CCI_BatterySensor::Init(t_tree);
-         /* Parse noise range */
-         GetNodeAttributeOrDefault(t_tree, "noise_range", m_cNoiseRange, m_cNoiseRange);
-         if(m_cNoiseRange.GetSpan() != 0) {
-            m_bAddNoise = true;
-            m_pcRNG = CRandom::CreateRNG("argos");
+
+         /* Parse noise injection */
+         if(NodeExists(t_tree, "noise")) {
+           TConfigurationNode& tNode = GetNode(t_tree, "noise");
+           m_cNoiseInjector.Init(tNode);
          }
       }
       catch(CARGoSException& ex) {
@@ -71,8 +69,8 @@ namespace argos {
          m_pcBatteryEntity->GetAvailableCharge() /
          m_pcBatteryEntity->GetFullCharge();
       /* Add noise */
-      if(m_bAddNoise) {
-         m_sReading.AvailableCharge += m_pcRNG->Uniform(m_cNoiseRange);
+      if(m_cNoiseInjector.Enabled()) {
+         m_sReading.AvailableCharge += m_cNoiseInjector.InjectNoise();
          /* To trunc battery level between 0 and 1 */
          UNIT.TruncValue(m_sReading.AvailableCharge);
       }
@@ -126,17 +124,44 @@ namespace argos {
 
                    "OPTIONAL XML CONFIGURATION\n\n"
 
-                   "It is possible to add uniform noise to the sensor, thus matching the\n"
-                   "characteristics of a real robot better. You can add noise through the\n"
-                   "attribute 'noise_range' as follows:\n\n"
+                   "It is possible to add different types of noise to the sensor, thus matching\n"
+                   "the characteristics of a real robot better. This can be done by adding 'noise'\n"
+                   "child tag to the sensor configuration; if the 'noise' tag does not exist, then\n"
+                   "no noise is injected. If the tag exists, then the 'model' attribute is required\n"
+                   "and is used to specify noise model to be applied to the sensor each timestep it\n"
+                   "is enabled/active:\n\n"
+
+                   "- 'none' - Does not inject any noise; this model exists to allow for the\n"
+                   "           inclusion of the 'noise' tag without necessarily enabling noise\n"
+                   "           injection.\n\n"
+
+                   "- 'uniform' - Injects uniformly distributed noise Uniform(-'level', 'level')\n"
+                   "              into the sensor. The 'level' attribute is required for this noise\n"
+                   "              model.\n\n"
+
+                   "- 'gaussian' - Injects Gaussian('mean','stddev') noise into the sensor\n"
+                   "               Both the 'mean' and 'stddev' attributes are optional, and\n"
+                   "               default to 0.0 and 1.0, respectively, if omitted.\n\n"
+
+                   "The final sensor reading after noise has been added is clamped to the [0-1] range.\n\n"
+
                    "  <controllers>\n"
                    "    ...\n"
                    "    <my_controller ...>\n"
                    "      ...\n"
                    "      <sensors>\n"
                    "        ...\n"
-                   "        <battery implementation=\"default\"\n"
-                   "                 noise_range=\"-0.3:0.4\" />\n"
+                   "        <!-- Uniformly distributed noise -->\n"
+                   "        <battery implementation=\"default\">\n"
+                   "          <noise model=\"uniform\"\n"
+                   "                 level=\"0.1\" />\n"
+                   "        </battery>\n"
+                   "        <!-- Gaussian noise -->\n"
+                   "        <battery implementation=\"default\">\n"
+                   "          <noise model=\"gaussian\"\n"
+                   "                 stddev=\"0.1\"\n"
+                   "                 mean=\"0.1\" />\n"
+                   "        </battery>\n"
                    "        ...\n"
                    "      </sensors>\n"
                    "      ...\n"

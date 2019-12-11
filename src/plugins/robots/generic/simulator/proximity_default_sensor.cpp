@@ -24,8 +24,6 @@ namespace argos {
    CProximityDefaultSensor::CProximityDefaultSensor() :
       m_pcEmbodiedEntity(NULL),
       m_bShowRays(false),
-      m_pcRNG(NULL),
-      m_bAddNoise(false),
       m_cSpace(CSimulator::GetInstance().GetSpace()) {}
 
    /****************************************/
@@ -51,16 +49,10 @@ namespace argos {
          CCI_ProximitySensor::Init(t_tree);
          /* Show rays? */
          GetNodeAttributeOrDefault(t_tree, "show_rays", m_bShowRays, m_bShowRays);
-         /* Parse noise level */
-         Real fNoiseLevel = 0.0f;
-         GetNodeAttributeOrDefault(t_tree, "noise_level", fNoiseLevel, fNoiseLevel);
-         if(fNoiseLevel < 0.0f) {
-            THROW_ARGOSEXCEPTION("Can't specify a negative value for the noise level of the proximity sensor");
-         }
-         else if(fNoiseLevel > 0.0f) {
-            m_bAddNoise = true;
-            m_cNoiseRange.Set(-fNoiseLevel, fNoiseLevel);
-            m_pcRNG = CRandom::CreateRNG("argos");
+         /* Parse noise injection */
+         if(NodeExists(t_tree, "noise")) {
+           TConfigurationNode& tNode = GetNode(t_tree, "noise");
+           m_cNoiseInjector.Init(tNode);
          }
          m_tReadings.resize(m_pcProximityEntity->GetNumSensors());
       }
@@ -110,8 +102,8 @@ namespace argos {
             }
          }
          /* Apply noise to the sensor */
-         if(m_bAddNoise) {
-            m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange);
+         if(m_cNoiseInjector.Enabled()) {
+            m_tReadings[i] += m_cNoiseInjector.InjectNoise();
          }
          /* Trunc the reading between 0 and 1 */
          UNIT.TruncValue(m_tReadings[i]);
@@ -190,12 +182,26 @@ namespace argos {
                    "    ...\n"
                    "  </controllers>\n\n"
 
-                   "It is possible to add uniform noise to the sensor, thus matching the\n"
-                   "characteristics of a real robot better. This can be done with the attribute\n"
-                   "\"noise_level\", which must be specified as a postive float in [0.0,1.0].\n"
-                   "Each timestep, randomly generated noise from a uniform distribution\n"
-                   "[-noise_level, noise_level], will be added to the calculated reading. The final\n"
-                   "sensor reading is always normalized in the [0-1] range.\n\n"
+                   "It is possible to add different types of noise to the sensor, thus matching\n"
+                   "the characteristics of a real robot better. This can be done by adding \"noise\"\n"
+                   "child tag to the sensor configuration; if the \"noise\" tag does not exist, then\n"
+                   "no noise is injected. If the tag exists, then the \"model\" attribute is required\n"
+                   "and is used to specify noise model to be applied to the sensor each timestep it\n"
+                   "is enabled/active:\n\n"
+
+                   "- \"none\" - Does not inject any noise; this model exists to allow for the\n"
+                   "           inclusion of the \"noise\" tag without necessarily enabling noise\n"
+                   "           injection.\n\n"
+
+                   "- \"uniform\" - Injects uniformly distributed noise Uniform(-\"level\", \"level\")\n"
+                   "              into the sensor. The \"level\" attribute is required for this noise\n"
+                   "              model.\n\n"
+
+                   "- \"gaussian\" - Injects Gaussian(\"mean\",\"stddev\") noise into the sensor\n"
+                   "               Both the \"mean\" and \"stddev\" attributes are optional, and\n"
+                   "               default to 0.0 and 1.0, respectively, if omitted.\n\n"
+
+                   "The final sensor reading after noise has been added is clamped to the [0-1] range.\n\n"
 
                    "  <controllers>\n"
                    "    ...\n"
@@ -203,8 +209,17 @@ namespace argos {
                    "      ...\n"
                    "      <sensors>\n"
                    "        ...\n"
-                   "        <proximity implementation=\"default\"\n"
-                   "                   noise_level=\"0.1\" />\n"
+                   "        <!-- Uniformly distributed noise -->\n"
+                   "        <proximity implementation=\"rot_z_only\">\n"
+                   "          <noise model=\"uniform\"\n"
+                   "                 level=\"0.1\" />\n"
+                   "        </proximity>\n"
+                   "        <!-- Gaussian noise -->\n"
+                   "        <proximity implementation=\"rot_z_only\">\n"
+                   "          <noise model=\"gaussian\"\n"
+                   "                 stddev=\"0.1\"\n"
+                   "                 mean=\"0.1\" />\n"
+                   "        </proximity>\n"
                    "        ...\n"
                    "      </sensors>\n"
                    "      ...\n"
