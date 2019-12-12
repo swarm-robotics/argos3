@@ -16,9 +16,7 @@ namespace argos {
    /****************************************/
 
    CDifferentialSteeringDefaultSensor::CDifferentialSteeringDefaultSensor() :
-      m_pcWheeledEntity(NULL),
-      m_pcRNG(NULL),
-      m_bAddNoise(false) {}
+      m_pcWheeledEntity(NULL) {}
 
    /****************************************/
    /****************************************/
@@ -45,13 +43,14 @@ namespace argos {
    void CDifferentialSteeringDefaultSensor::Init(TConfigurationNode& t_tree) {
       try {
          CCI_DifferentialSteeringSensor::Init(t_tree);
-         /* Parse noise range */
-         GetNodeAttributeOrDefault(t_tree, "vel_noise_range",  m_cVelNoiseRange,  m_cVelNoiseRange);
-         GetNodeAttributeOrDefault(t_tree, "dist_noise_range", m_cDistNoiseRange, m_cDistNoiseRange);
-         if(m_cVelNoiseRange.GetSpan() != 0 ||
-            m_cDistNoiseRange.GetSpan() != 0) {
-            m_bAddNoise = true;
-            m_pcRNG = CRandom::CreateRNG("argos");
+         /* Parse noise injection */
+         if(NodeExists(t_tree, "vel_noise")) {
+           TConfigurationNode& tNode = GetNode(t_tree, "vel_noise");
+           m_cVelNoiseInjector.Init(tNode);
+         }
+         if(NodeExists(t_tree, "dist_noise")) {
+           TConfigurationNode& tNode = GetNode(t_tree, "dist_noise");
+           m_cDistNoiseInjector.Init(tNode);
          }
       }
       catch(CARGoSException& ex) {
@@ -61,17 +60,20 @@ namespace argos {
 
    /****************************************/
    /****************************************/
-   
+
    void CDifferentialSteeringDefaultSensor::Update() {
       m_sReading.VelocityLeftWheel = m_pfWheelVelocities[0] * 100.0f;
       m_sReading.VelocityRightWheel = m_pfWheelVelocities[1] * 100.0f;
       m_sReading.CoveredDistanceLeftWheel = m_sReading.VelocityLeftWheel * CPhysicsEngine::GetSimulationClockTick();
       m_sReading.CoveredDistanceRightWheel = m_sReading.VelocityRightWheel * CPhysicsEngine::GetSimulationClockTick();
-      if(m_bAddNoise) {
-         m_sReading.VelocityLeftWheel  += m_pcRNG->Uniform(m_cVelNoiseRange);
-         m_sReading.VelocityRightWheel += m_pcRNG->Uniform(m_cVelNoiseRange);
-         m_sReading.CoveredDistanceLeftWheel  += m_pcRNG->Uniform(m_cDistNoiseRange);
-         m_sReading.CoveredDistanceRightWheel += m_pcRNG->Uniform(m_cDistNoiseRange);
+
+      if (m_cDistNoiseInjector.Enabled()) {
+        m_sReading.CoveredDistanceLeftWheel  += m_cDistNoiseInjector.InjectNoise();
+        m_sReading.CoveredDistanceRightWheel += m_cDistNoiseInjector.InjectNoise();
+      }
+      if (m_cVelNoiseInjector.Enabled()) {
+        m_sReading.VelocityLeftWheel  += m_cVelNoiseInjector.InjectNoise();
+        m_sReading.VelocityRightWheel += m_cVelNoiseInjector.InjectNoise();
       }
    }
 
@@ -116,12 +118,27 @@ namespace argos {
 
                    "OPTIONAL XML CONFIGURATION\n\n"
 
-                   "It is possible to add uniform noise to the sensor, thus matching the\n"
-                   "characteristics of a real robot better. You can add noise through the\n"
-                   "attributes 'vel_noise_range' and 'dist_noise_range'.\n"
-                   "Attribute 'vel_noise_range' regulates the noise range on the velocity returned\n"
-                   "by the sensor. Attribute 'dist_noise_range' sets the noise range on the\n"
-                   "distance covered by the wheels.\n\n"
+                   "It is possible to add different types of noise to the sensor, thus matching\n"
+                   "the characteristics of a real robot better. This can be done by adding one or\n"
+                   "more of the ['dist_noise', 'vel_noise'] child tags to the sensor\n"
+                   "configuration. 'dist_noise' controls the noise applied to the reading of distance\n"
+                   "covered by the wheels, and 'vel_noise' controls the noise applied to the sensor\n"
+                   "velocity reading. If the '*_noise' tag does not exist, then no noise of that type\n"
+                   "is injected. If the tag exists, then the 'model' attribute is required and is\n"
+                   "used to specify noise model to be applied to the sensor each timestep it is\n"
+                   "enabled/active:\n\n"
+
+                   "- 'none' - Does not inject any noise; this model exists to allow for the\n"
+                   "           inclusion of the 'noise' tag without necessarily enabling noise\n"
+                   "           injection.\n\n"
+
+                   "- 'uniform' - Injects uniformly distributed noise Uniform(-'level', 'level')\n"
+                   "              into the sensor. The 'level' attribute is required for this noise\n"
+                   "              model.\n\n"
+
+                   "- 'gaussian' - Injects Gaussian('mean','stddev') noise into the sensor\n"
+                   "               Both the 'mean' and 'stddev' attributes are optional, and\n"
+                   "               default to 0.0 and 1.0, respectively, if omitted.\n\n"
 
                    "  <controllers>\n"
                    "    ...\n"
@@ -129,9 +146,17 @@ namespace argos {
                    "      ...\n"
                    "      <sensors>\n"
                    "        ...\n"
-                   "        <differential_steering implementation=\"default\"\n"
-                   "                               vel_noise_range=\"-0.1:0.2\"\n"
-                   "                               dist_noise_range=\"-10.5:13.7\" />\n"
+                   "        <!-- Uniformly distributed distance noise -->\n"
+                   "        <differential_steering implementation=\"default\">\n"
+                   "          <dist_noise model=\"uniform\"\n"
+                   "                      level=\"0.1\" />\n"
+                   "        </differential_steering>\n"
+                   "        <!-- Gaussian velocity noise -->\n"
+                   "        <differential_steering implementation=\"default\">\n"
+                   "          <vel_noise model=\"gaussian\"\n"
+                   "                     stddev=\"0.1\"\n"
+                   "                     mean=\"0.1\" />\n"
+                   "        </differential_steering>\n"
                    "        ...\n"
                    "      </sensors>\n"
                    "      ...\n"

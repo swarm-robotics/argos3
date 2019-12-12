@@ -83,7 +83,7 @@ namespace argos {
       bool m_bEnabled{false};
 
       /** The noise model: uniform or gaussian */
-      std::string m_sModel{""};
+      std::string m_strModel{""};
 
       /** Uniform noise range */
       CRange<Real> m_cUniformRange{};

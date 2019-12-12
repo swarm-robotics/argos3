@@ -16,17 +16,17 @@ namespace argos {
    void CNoiseInjector::Init(TConfigurationNode& t_tree) {
       try {
          /* parse noise model */
-         GetNodeAttribute(t_tree, "model", m_sModel);
+         GetNodeAttribute(t_tree, "model", m_strModel);
 
-         if ("none" == m_sModel) {
+         if ("none" == m_strModel) {
            /* no noise injection */
          }
-         else if ("uniform" == m_sModel) {
+         else if ("uniform" == m_strModel) {
            InitUniform(t_tree);
            m_bEnabled = true;
            m_pcRNG = CRandom::CreateRNG("argos");
          }
-         else if ("gaussian" == m_sModel) {
+         else if ("gaussian" == m_strModel) {
            InitGaussian(t_tree);
            m_bEnabled = true;
            m_pcRNG = CRandom::CreateRNG("argos");
@@ -59,7 +59,7 @@ namespace argos {
    /****************************************/
 
    void CNoiseInjector::InitUniform(const CRange<Real>& cUniformRange) {
-     m_sModel = "uniform";
+     m_strModel = "uniform";
      m_cUniformRange = cUniformRange;
      m_bEnabled = true;
    } /* InitUniform() */
@@ -87,7 +87,7 @@ namespace argos {
    /****************************************/
 
    void CNoiseInjector::InitGaussian(Real fMean, Real fStdDev) {
-     m_sModel = "gaussian";
+     m_strModel = "gaussian";
      m_fGaussianMean = fMean;
      m_fGaussianStdDev = fStdDev;
      m_bEnabled = true;
@@ -97,17 +97,14 @@ namespace argos {
    /****************************************/
 
    Real CNoiseInjector::InjectNoise(void) {
-     if ("none" == m_sModel) {
+     if ("none" == m_strModel) {
        /* no noise injection */
        return 0.0;
-     } else if ("uniform" == m_sModel) {
-       double val = m_pcRNG->Uniform(m_cUniformRange);
-       std::cout<< m_cUniformRange;
-       printf("Inject noise: %f\n", val);
-       return val;
+     } else if ("uniform" == m_strModel) {
+       return m_pcRNG->Uniform(m_cUniformRange);
      }
-     else if ("gaussian" == m_sModel) {
-       return m_pcRNG->Gaussian(m_fGaussianMean, m_fGaussianStdDev);
+     else if ("gaussian" == m_strModel) {
+       return m_pcRNG->Gaussian(m_fGaussianStdDev, m_fGaussianMean);
      }
      else {
        THROW_ARGOSEXCEPTION("Bad noise model specified");

@@ -339,6 +339,7 @@ namespace argos {
          }
          /* Update sensor readings and call controllers */
          THREAD_WAIT_FOR_GO_SIGNAL(SenseControlStep);
+         
          /* Cope with the fact that there may be less entities than threads */
          if(cEntityRange.GetSpan() > 0) {
             /* This thread has entities */

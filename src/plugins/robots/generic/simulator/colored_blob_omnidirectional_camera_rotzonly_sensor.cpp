@@ -157,7 +157,7 @@ namespace argos {
          /* Parse noise injection */
          if(NodeExists(t_tree, "noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "noise");
-           m_NoiseInjector.Init(tNode);
+           m_cNoiseInjector.Init(tNode);
          }
          /* Get LED medium from id specified in the XML */
          std::string strMedium;
@@ -169,7 +169,7 @@ namespace argos {
             *m_pcOmnicamEntity,
             *m_pcEmbodiedEntity,
             *m_pcControllableEntity,
-            m_NoiseInjector,
+            m_cNoiseInjector,
             m_bShowRays);
       }
       catch(CARGoSException& ex) {

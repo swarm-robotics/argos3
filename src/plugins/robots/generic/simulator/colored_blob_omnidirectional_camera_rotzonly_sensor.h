@@ -52,7 +52,7 @@ namespace argos {
       bool                                     m_bShowRays;
 
       /** Noise injector */
-      CNoiseInjector m_NoiseInjector;
+      CNoiseInjector m_cNoiseInjector;
    };
 }
 

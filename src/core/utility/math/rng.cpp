@@ -44,10 +44,10 @@ namespace argos {
       m_nIndex(N+1) {
       Reset();
    }
-   
+
    /****************************************/
    /****************************************/
-   
+
    CRandom::CRNG::CRNG(const CRNG& c_rng) :
       m_unSeed(c_rng.m_unSeed),
       m_punState(new UInt32[N]),
@@ -68,12 +68,12 @@ namespace argos {
    void CRandom::CRNG::Reset() {
       m_punState[0]= m_unSeed & 0xffffffffUL;
       for (m_nIndex = 1; m_nIndex < N; ++m_nIndex) {
-         m_punState[m_nIndex] = 
-            (1812433253UL * (m_punState[m_nIndex-1] ^ (m_punState[m_nIndex-1] >> 30)) + m_nIndex); 
+         m_punState[m_nIndex] =
+            (1812433253UL * (m_punState[m_nIndex-1] ^ (m_punState[m_nIndex-1] >> 30)) + m_nIndex);
          m_punState[m_nIndex] &= 0xffffffffUL;
       }
    }
-   
+
    /****************************************/
    /****************************************/
 
@@ -89,7 +89,7 @@ namespace argos {
       INT_RANGE.MapValueIntoRange(cRetVal, Uniform32bit(), c_range);
       return cRetVal;
    }
-   
+
    /****************************************/
    /****************************************/
 
@@ -98,7 +98,7 @@ namespace argos {
       INT_RANGE.MapValueIntoRange(fRetVal, Uniform32bit(), c_range);
       return fRetVal;
    }
-   
+
    /****************************************/
    /****************************************/
 
@@ -107,7 +107,7 @@ namespace argos {
       INT_RANGE.MapValueIntoRange(nRetVal, Uniform32bit(), c_range);
       return nRetVal;
    }
-   
+
    /****************************************/
    /****************************************/
 
@@ -116,7 +116,7 @@ namespace argos {
       INT_RANGE.MapValueIntoRange(unRetVal, Uniform32bit(), c_range);
       return unRetVal;
    }
-   
+
    /****************************************/
    /****************************************/
 
@@ -124,13 +124,13 @@ namespace argos {
       static CRange<Real> fRange(0.0f, 1.0f);
       return -Log(Uniform(fRange)) * f_mean;
    }
-   
+
    /****************************************/
    /****************************************/
 
    UInt32 CRandom::CRNG::Poisson(Real f_mean)
    {
-      /* This is the Devroye method. 
+      /* This is the Devroye method.
          see http://www.nrbook.com/devroye/Devroye_files/chapter_six.pdf
       */
       UInt32 unRetVal = 0;
@@ -194,7 +194,7 @@ namespace argos {
        */
       return std::exp(f_mu + f_sigma * fValue);
    }
-   
+
    /****************************************/
    /****************************************/
 
@@ -202,7 +202,7 @@ namespace argos {
       UInt32 y;
       static UInt32 mag01[2] = { 0x0UL, MATRIX_A };
       /* mag01[x] = x * MATRIX_A  for x=0,1 */
-      
+
       if (m_nIndex >= N) { /* generate N words at one time */
          SInt32 kk;
          for (kk = 0; kk < N - M; ++kk) {
@@ -215,21 +215,21 @@ namespace argos {
          }
          y = (m_punState[N-1] & UPPER_MASK) | (m_punState[0] & LOWER_MASK);
          m_punState[N-1] = m_punState[M-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
-         
+
          m_nIndex = 0;
       }
-      
+
       y = m_punState[m_nIndex++];
-      
+
       /* Tempering */
       y ^= (y >> 11);
       y ^= (y << 7) & 0x9d2c5680UL;
       y ^= (y << 15) & 0xefc60000UL;
       y ^= (y >> 18);
-      
+
       return y;
    }
-   
+
    /****************************************/
    /****************************************/
 
@@ -348,7 +348,7 @@ namespace argos {
       CHECK_CATEGORY(str_category);
       return itCategory->second->CreateRNG();
    }
-   
+
    /****************************************/
    /****************************************/
 
