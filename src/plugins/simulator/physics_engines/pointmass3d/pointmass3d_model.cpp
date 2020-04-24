@@ -15,6 +15,8 @@ namespace argos {
                            &CPointMass3DModel::UpdateOriginAnchor);
       /* Set initial position */
       m_cPosition = GetEmbodiedEntity().GetOriginAnchor().Position;
+      /* Set initial orientation */
+      m_cOrientation = GetEmbodiedEntity().GetOriginAnchor().Orientation;
    }
    
    /****************************************/
@@ -22,6 +24,7 @@ namespace argos {
 
    void CPointMass3DModel::Reset() {
       m_cPosition = GetEmbodiedEntity().GetOriginAnchor().Position;
+      m_cOrientation = GetEmbodiedEntity().GetOriginAnchor().Orientation;
       m_cVelocity = CVector3();
       m_cAcceleration = CVector3();
       CalculateBoundingBox();
@@ -33,6 +36,7 @@ namespace argos {
    void CPointMass3DModel::MoveTo(const CVector3& c_position,
                                   const CQuaternion& c_orientation) {
       m_cPosition = c_position;
+      m_cOrientation = c_orientation;
       UpdateEntityStatus();
    }
 
@@ -55,6 +59,7 @@ namespace argos {
 
    void CPointMass3DModel::UpdateOriginAnchor(SAnchor& s_anchor) {
       s_anchor.Position = m_cPosition;
+      s_anchor.Orientation = m_cOrientation;
    }
 
    /****************************************/

@@ -1,5 +1,5 @@
 /**
- * @file <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_differentialsteering_control.cpp>
+ * @file <argos3/plugins/robots/foot-bot/simulator/pointmass3d_footbot_model.cpp>
  *
  * @author Carlo Pinciroli - <ilpincy@gmail.com>
  */
@@ -29,9 +29,6 @@ namespace argos {
       /* Register the origin anchor update method */
       RegisterAnchorMethod(GetEmbodiedEntity().GetOriginAnchor(),
                            &CPointMass3DFootBotModel::UpdateOriginAnchor);
-      /* Get initial rotation */
-      CRadians cTmp1, cTmp2;
-      GetEmbodiedEntity().GetOriginAnchor().Orientation.ToEulerAngles(m_cYaw, cTmp1, cTmp2);
    }
 
    /****************************************/
@@ -39,8 +36,6 @@ namespace argos {
 
    void CPointMass3DFootBotModel::Reset() {
       CPointMass3DModel::Reset();
-      CRadians cTmp1, cTmp2;
-      GetEmbodiedEntity().GetOriginAnchor().Orientation.ToEulerAngles(m_cYaw, cTmp1, cTmp2);
       m_fAngularVelocity = 0.0;
    }
 
@@ -49,9 +44,12 @@ namespace argos {
 
 
    void CPointMass3DFootBotModel::UpdateFromEntityStatus() {
-      m_cVelocity.Set((m_fCurrentWheelVelocity[FOOTBOT_RIGHT_WHEEL] + m_fCurrentWheelVelocity[FOOTBOT_LEFT_WHEEL])*0.5, 0.0, 0.0);
-      m_cVelocity.RotateZ(m_cYaw);
-      m_fAngularVelocity = (m_fCurrentWheelVelocity[FOOTBOT_RIGHT_WHEEL] - m_fCurrentWheelVelocity[FOOTBOT_LEFT_WHEEL]) / FOOTBOT_INTERWHEEL_DISTANCE;
+     m_cVelocity.Set((m_fCurrentWheelVelocity[FOOTBOT_RIGHT_WHEEL] + m_fCurrentWheelVelocity[FOOTBOT_LEFT_WHEEL]) * 0.5,
+                     0.0,
+                     0.0);
+      m_cVelocity.Rotate(m_cOrientation);
+      m_fAngularVelocity = (m_fCurrentWheelVelocity[FOOTBOT_RIGHT_WHEEL] -
+                            m_fCurrentWheelVelocity[FOOTBOT_LEFT_WHEEL]) / FOOTBOT_INTERWHEEL_DISTANCE;
    }
 
    /****************************************/
@@ -59,7 +57,15 @@ namespace argos {
 
    void CPointMass3DFootBotModel::Step() {
       m_cPosition += m_cVelocity * m_cPM3DEngine.GetPhysicsClockTick();
-      m_cYaw += CRadians(m_fAngularVelocity * m_cPM3DEngine.GetPhysicsClockTick());
+
+      auto pitch_angle = ATan2(-m_cVelocity.GetX(),
+                               Sqrt(Square(m_cVelocity.GetY()) + Square(m_cVelocity.GetZ())));
+      auto roll_angle = ATan2(m_cVelocity.GetY(), m_cVelocity.GetZ());
+
+      argos::CRadians cYaw(m_fAngularVelocity * m_cPM3DEngine.GetPhysicsClockTick());
+      argos::CRadians cPitch(pitch_angle * m_cPM3DEngine.GetPhysicsClockTick());
+      argos::CRadians cRoll(roll_angle * m_cPM3DEngine.GetPhysicsClockTick());
+      m_cOrientation.FromEulerAngles(cYaw, cPitch, cRoll);
    }
 
    /****************************************/
@@ -92,14 +98,6 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   void CPointMass3DFootBotModel::UpdateOriginAnchor(SAnchor& s_anchor) {
-      s_anchor.Position = m_cPosition;
-      s_anchor.Orientation = CQuaternion(m_cYaw, CVector3::Z);
-   }
-
-   /****************************************/
-   /****************************************/
-   
    REGISTER_STANDARD_POINTMASS3D_OPERATIONS_ON_ENTITY(CFootBotEntity, CPointMass3DFootBotModel);
 
    /****************************************/

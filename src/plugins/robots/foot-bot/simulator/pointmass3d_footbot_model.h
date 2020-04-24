@@ -38,17 +38,12 @@ namespace argos {
       virtual bool CheckIntersectionWithRay(Real& f_t_on_ray,
                                             const CRay3& c_ray) const;
 
-      virtual void UpdateOriginAnchor(SAnchor& s_anchor);
-
    private:
 
       /** Reference to the wheeled entity */
       CWheeledEntity& m_cWheeledEntity;
 
-      /** The yaw of the foot-bot entity */
-      CRadians m_cYaw;
-
-      /** The yaw of the foot-bot entity */
+      /** The angular velocity of the foot-bot entity */
       Real m_fAngularVelocity;
 
       /** Current wheel velocity */

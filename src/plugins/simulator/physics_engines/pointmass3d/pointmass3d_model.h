@@ -73,6 +73,9 @@ namespace argos {
       /** The position of the model in this engine. */
       CVector3 m_cPosition;
 
+      /** The orientation of the model in this engine. */
+      CQuaternion m_cOrientation;
+
       /** The linear velocity of this model in the engine. */
       CVector3 m_cVelocity;
 
