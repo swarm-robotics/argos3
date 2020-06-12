@@ -35,6 +35,9 @@ namespace argos {
          m_pcControllableEntity = &(c_entity.GetComponent<CControllableEntity>("controller"));
          m_pcProximityEntity = &(c_entity.GetComponent<CProximitySensorEquippedEntity>("proximity_sensors"));
          m_pcProximityEntity->Enable();
+
+         /* sensor is enabled by default */
+         Enable();
       }
       catch(CARGoSException& ex) {
          THROW_ARGOSEXCEPTION_NESTED("Can't set robot for the proximity default sensor", ex);
@@ -65,6 +68,10 @@ namespace argos {
 
    void CEPuckProximityDefaultSensor::Update()
    {
+      /* sensor is disabled--nothing to do */
+      if (IsDisabled()) {
+        return;
+      }
       /* Ray used for scanning the environment for obstacles */
       CRay3 cScanningRay;
       CVector3 cRayStart, cRayEnd;
@@ -148,6 +155,7 @@ namespace argos {
                    "This sensor accesses the epuck proximity sensor. For a complete description\n"
                    "of its usage, refer to the ci_epuck_proximity_sensor.h interface. For the XML\n"
                    "configuration, refer to the default proximity sensor.\n",
+
                    "Usable"
 		  );
 

@@ -47,6 +47,8 @@ namespace argos {
            TConfigurationNode& tNode = GetNode(t_tree, "axis_noise");
            m_cAxisNoiseInjector.Init(tNode);
          }
+         /* sensor is enabled by default */
+         Enable();
       }
       catch(CARGoSException& ex) {
          THROW_ARGOSEXCEPTION_NESTED("Initialization error in default positioning sensor", ex);
@@ -57,6 +59,10 @@ namespace argos {
    /****************************************/
 
    void CPositioningDefaultSensor::Update() {
+      /* sensor is disabled--nothing to do */
+      if (IsDisabled()) {
+        return;
+      }
       m_sReading.Position = m_pcEmbodiedEntity->GetOriginAnchor().Position;
       if (m_cPosNoiseInjector.Enabled() ||
           m_cAngleNoiseInjector.Enabled() ||
@@ -98,6 +104,8 @@ namespace argos {
                    "can be used with any robot, since it accesses only the body component. In\n"
                    "controllers, you must include the ci_positioning_sensor.h header.\n\n"
 
+                   "This sensor is enabled by default.\n\n"
+
                    "REQUIRED XML CONFIGURATION\n\n"
                    "  <controllers>\n"
                    "    ...\n"
@@ -130,6 +138,7 @@ namespace argos {
                    "AND axis sensor values are jointly used are used to calculate a quaternion, which\n"
                    "is the actual returned value for rotation, so the 'angle_noise' and 'axis_noise'\n"
                    "tags should (probably) appear together, if they appear at all.\n\n" +
+
                    CNoiseInjector::GetQueryDocumentation({
                        .strDocName = "positioning sensor",
                            .strXMLParent = "positioning",

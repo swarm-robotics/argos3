@@ -59,12 +59,18 @@ namespace argos {
       catch(CARGoSException& ex) {
          THROW_ARGOSEXCEPTION_NESTED("Initialization error in default proximity sensor", ex);
       }
+      /* This sensor is enabled by default */
+      Enable();
    }
 
    /****************************************/
    /****************************************/
-   
+
    void CProximityDefaultSensor::Update() {
+      /* sensor is disabled--nothing to do */
+      if (IsDisabled()) {
+        return;
+      }
       /* Ray used for scanning the environment for obstacles */
       CRay3 cScanningRay;
       CVector3 cRayStart, cRayEnd;
@@ -141,6 +147,8 @@ namespace argos {
                    "the occluding object, and are calculated as value=exp(-distance). In\n"
                    "controllers, you must include the ci_proximity_sensor.h header.\n\n"
 
+                   "This sensor is enabled by default.\n\n"
+
                    "REQUIRED XML CONFIGURATION\n\n"
 
                    "  <controllers>\n"
@@ -195,7 +203,6 @@ namespace argos {
 
                    "The final proximity sensor reading after noise has been added is clamped to the "
                    "[0-1] range.\n\n",
-
 
                    "Usable"
 		  );

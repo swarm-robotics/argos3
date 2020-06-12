@@ -54,12 +54,18 @@ namespace argos {
       catch(CARGoSException& ex) {
          THROW_ARGOSEXCEPTION_NESTED("Initialization error in rotzonly ground sensor", ex);
       }
+      /* sensor is enabled by default */
+      Enable();
    }
 
    /****************************************/
    /****************************************/
 
    void CGroundRotZOnlySensor::Update() {
+      /* sensor is disabled--nothing to do */
+      if (IsDisabled()) {
+        return;
+      }
       /*
        * We make the assumption that the robot is rotated only wrt to Z
        */
@@ -123,6 +129,8 @@ namespace argos {
                    "of ground sensor, readings can either take 0 or 1 as value (bw sensors) or a\n"
                    "value in between (grayscale sensors). In controllers, you must include the\n"
                    "ci_ground_sensor.h header.\n\n"
+
+                   "This sensor is enabled by default.\n\n"
 
                    "REQUIRED XML CONFIGURATION\n\n"
                    "  <controllers>\n"
