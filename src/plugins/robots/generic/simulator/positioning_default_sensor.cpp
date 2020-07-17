@@ -7,6 +7,8 @@
 #include <argos3/core/simulator/simulator.h>
 #include <argos3/core/simulator/entity/embodied_entity.h>
 #include <argos3/core/simulator/entity/composable_entity.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector_factory.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector.h>
 
 #include "positioning_default_sensor.h"
 
@@ -18,6 +20,10 @@ namespace argos {
    CPositioningDefaultSensor::CPositioningDefaultSensor() :
        m_pcEmbodiedEntity(NULL) {}
 
+   /****************************************/
+   /****************************************/
+
+   CPositioningDefaultSensor::~CPositioningDefaultSensor() {}
 
    /****************************************/
    /****************************************/
@@ -37,17 +43,17 @@ namespace argos {
          /* Parse noise injection */
          if(NodeExists(t_tree, "pos_noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "pos_noise");
-           m_pcPosNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcPosNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcPosNoiseInjector->Init(tNode);
          }
          if(NodeExists(t_tree, "angle_noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "angle_noise");
-           m_pcAngleNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcAngleNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcAngleNoiseInjector->Init(tNode);
          }
          if(NodeExists(t_tree, "axis_noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "axis_noise");
-           m_pcAxisNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcAxisNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcAxisNoiseInjector->Init(tNode);
          }
          /* sensor is enabled by default */

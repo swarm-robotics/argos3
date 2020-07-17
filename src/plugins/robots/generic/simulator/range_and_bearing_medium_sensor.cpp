@@ -10,6 +10,9 @@
 #include <argos3/core/simulator/entity/controllable_entity.h>
 #include <argos3/plugins/simulator/entities/rab_equipped_entity.h>
 #include <argos3/plugins/simulator/media/rab_medium.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector_factory.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector.h>
+#include <argos3/plugins/robots/generic/simulator/uniform_noise_injector.h>
 
 namespace argos {
 
@@ -25,6 +28,11 @@ namespace argos {
       m_pcRangeAndBearingEquippedEntity(NULL),
       m_cSpace(CSimulator::GetInstance().GetSpace()),
       m_bShowRays(false) {}
+
+   /****************************************/
+   /****************************************/
+
+   CRangeAndBearingMediumSensor::~CRangeAndBearingMediumSensor() {}
 
    /****************************************/
    /****************************************/
@@ -46,22 +54,22 @@ namespace argos {
          /* Show rays? */
          GetNodeAttributeOrDefault(t_tree, "show_rays", m_bShowRays, m_bShowRays);
          /* Parse noise injection */
-         if(NodeExists(t_tree, "distance_noise")) {
-           TConfigurationNode& tNode = GetNode(t_tree, "distance_noise");
-           m_pcDistanceNoiseInjector = std::make_unique<CNoiseInjector>();
+         if(NodeExists(t_tree, "dist_noise")) {
+           TConfigurationNode& tNode = GetNode(t_tree, "dist_noise");
+           m_pcDistanceNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcDistanceNoiseInjector->Init(tNode);
            /* always uniform noise for angle and inclination */
-           m_pcInclinationNoiseInjector = std::make_unique<CNoiseInjector>();
-           m_pcInclinationNoiseInjector->InitUniform(CRange<Real>(0.0,
+           m_pcInclinationNoiseInjector = std::make_unique<CUniformNoiseInjector>();
+           m_pcInclinationNoiseInjector->InitFromRange(CRange<Real>(0.0,
                                                                   CRadians::PI.GetValue()));
-           m_pcAzimuthNoiseInjector = std::make_unique<CNoiseInjector>();
-           m_pcAzimuthNoiseInjector->InitUniform(CRange<Real>(0.0,
+           m_pcAzimuthNoiseInjector = std::make_unique<CUniformNoiseInjector>();
+           m_pcAzimuthNoiseInjector->InitFromRange(CRange<Real>(0.0,
                                                               CRadians::TWO_PI.GetValue()));
 
          }
          if(NodeExists(t_tree, "packet_drop_noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "packet_drop_noise");
-           m_pcPacketDropNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcPacketDropNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcPacketDropNoiseInjector->Init(tNode);
          }
 
@@ -260,7 +268,7 @@ namespace argos {
                    CNoiseInjector::GetQueryDocumentation({
                        .strDocName = "RAB sensor",
                            .strXMLParent = "range_and_bearing",
-                           .strXMLTag = "distance_drop_noise",
+                           .strXMLTag = "dist_noise",
                            .strSAAType = "sensor",
                            .bShowExamples = true}) +
 

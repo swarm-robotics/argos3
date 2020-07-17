@@ -7,6 +7,8 @@
 #include <argos3/core/simulator/simulator.h>
 #include <argos3/plugins/simulator/entities/wheeled_entity.h>
 #include <argos3/core/simulator/entity/composable_entity.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector_factory.h>
 
 #include "differential_steering_default_sensor.h"
 
@@ -17,6 +19,11 @@ namespace argos {
 
    CDifferentialSteeringDefaultSensor::CDifferentialSteeringDefaultSensor() :
       m_pcWheeledEntity(NULL) {}
+
+   /****************************************/
+   /****************************************/
+
+   CDifferentialSteeringDefaultSensor::~CDifferentialSteeringDefaultSensor() {}
 
    /****************************************/
    /****************************************/
@@ -46,12 +53,12 @@ namespace argos {
          /* Parse noise injection */
          if(NodeExists(t_tree, "vel_noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "vel_noise");
-           m_pcVelNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcVelNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcVelNoiseInjector->Init(tNode);
          }
          if(NodeExists(t_tree, "dist_noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "dist_noise");
-           m_pcDistNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcDistNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcDistNoiseInjector->Init(tNode);
          }
       }

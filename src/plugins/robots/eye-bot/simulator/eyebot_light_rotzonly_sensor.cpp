@@ -9,6 +9,8 @@
 #include <argos3/core/simulator/entity/composable_entity.h>
 #include <argos3/plugins/simulator/entities/light_entity.h>
 #include <argos3/plugins/simulator/entities/light_sensor_equipped_entity.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector_factory.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector.h>
 
 #include "eyebot_light_rotzonly_sensor.h"
 
@@ -84,7 +86,7 @@ namespace argos {
          /* Parse noise injection */
          if(NodeExists(t_tree, "noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "noise");
-           m_pcNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcNoiseInjector->Init(tNode);
          }
          m_tReadings.resize(m_pcLightEntity->GetNumSensors());

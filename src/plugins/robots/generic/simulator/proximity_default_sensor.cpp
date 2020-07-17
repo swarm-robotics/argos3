@@ -8,6 +8,8 @@
 #include <argos3/core/simulator/entity/embodied_entity.h>
 #include <argos3/core/simulator/entity/composable_entity.h>
 #include <argos3/plugins/simulator/entities/proximity_sensor_equipped_entity.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector_factory.h>
+#include <argos3/plugins/robots/generic/simulator/noise_injector.h>
 
 #include "proximity_default_sensor.h"
 
@@ -25,6 +27,11 @@ namespace argos {
       m_pcEmbodiedEntity(NULL),
       m_bShowRays(false),
       m_cSpace(CSimulator::GetInstance().GetSpace()) {}
+
+   /****************************************/
+   /****************************************/
+
+   CProximityDefaultSensor::~CProximityDefaultSensor() {}
 
    /****************************************/
    /****************************************/
@@ -52,7 +59,7 @@ namespace argos {
          /* Parse noise injection */
          if(NodeExists(t_tree, "noise")) {
            TConfigurationNode& tNode = GetNode(t_tree, "noise");
-           m_pcNoiseInjector = std::make_unique<CNoiseInjector>();
+           m_pcNoiseInjector = CNoiseInjectorFactory::Create(tNode);
            m_pcNoiseInjector->Init(tNode);
          }
          m_tReadings.resize(m_pcProximityEntity->GetNumSensors());
